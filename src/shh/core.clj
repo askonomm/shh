@@ -28,12 +28,14 @@
    "Creating a password called:"
    "What is the desired password length?"
    "Password copied!"
-   "Changing a password for:"
-   "Password updated and copied!"])
+   "Changing the password for:"
+   "Password updated."])
 
 
 (defn- init-db
-  ""
+  "Checks of the database exists at `data-store-path` and if it
+  does, will populate the `db*` with it. Otherwise will leave `db*`
+  as-is and create the database file."
   []
   (if (.exists (io/file data-store-path))
     (reset! db* (-> (slurp data-store-path)
@@ -41,6 +43,7 @@
     (spit data-store-path "[]")))
 
 
+; TODO: make this also work in Linux
 (defn- copy-password
   ""
   [password]
@@ -67,12 +70,13 @@
   ""
   [name]
   (println (nth messages 2) name "...")
+  (println (nth messages 3))
   (let [password-length (Integer/parseInt (read-line))
         password        (generate-password password-length)]
     (swap! db* conj {:name     name
                      :password password})
     (copy-password password)
-    (println (nth messages 3))))
+    (println (nth messages 4))))
 
 
 (defn- delete!
@@ -82,25 +86,35 @@
 
 
 (defn- change!
-  ""
+  "Attempts to change the password of an existing item, but if
+  no item was found, offers to create one instead."
   [name]
   (init-db)
-  (println (nth messages 5) name "...")
-  (let [password-length (Integer/parseInt (read-line))
-        password        (generate-password password-length)
-        updated-db      (mapv (fn [item]
-                                (if (= (:name item) name)
-                                  (merge item {:password password})
-                                  item))
-                              @db*)]
-    (reset! db* updated-db)
-    (copy-password password)
-    (println (nth messages 6))))
+  ; if the record exists, let's change it
+  (when (find-by-name name)
+    (println (nth messages 5) name "...")
+    (println (nth messages 3))
+    (let [password-length (Integer/parseInt (read-line))
+          password        (generate-password password-length)
+          updated-db      (mapv (fn [item]
+                                  (if (= (:name item) name)
+                                    (merge item {:password password})
+                                    item))
+                                @db*)]
+      (reset! db* updated-db)
+      (println (nth messages 6))
+      (copy-password password)))
+  ; otherwise, let's offer to create instead.
+  (when-not (find-by-name name)
+    (println (nth messages 1))
+    (if (= (read-line) "yes")
+      (create! name)
+      (System/exit 0))))
 
 
 
 (defn- list-items!
-  ""
+  "Lists all the names of the items in db."
   []
   (init-db)
   (doseq [entry @db*]
@@ -116,8 +130,9 @@
     (if-let [entry (find-by-name name)]
       (copy-password (:password entry))
       (do (println (nth messages 1))
-          (when (= (read-line) "yes")
-            (create! name))))))
+          (if (= (read-line) "yes")
+            (create! name)
+            (System/exit 0))))))
 
 
 (defn argcmd
