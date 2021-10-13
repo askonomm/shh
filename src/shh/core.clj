@@ -19,6 +19,7 @@
   (spit data-store-path new-state))
 
 
+; run `update-db` whenever db* changes.
 (add-watch db* :watcher update-db)
 
 
@@ -43,23 +44,30 @@
     (spit data-store-path "[]")))
 
 
-; TODO: make this also work in Linux
 (defn- copy-password
-  ""
+  "Depending on the operating system used, attempts to copy the
+  given `password` into clipboard."
   [password]
-  (sh/sh "pbcopy" "<<<" :in (str password))
-  (println (nth messages 4))
-  (System/exit 0))
+  (let [os (System/getProperty "os.name")]
+    (cond
+      (= "Linux" os)
+      (sh/sh "xclip -sel clip" "<<<" :in password)
+      (= "Mac OS X" os)
+      (sh/sh "pbcopy" "<<<" :in password))
+    (println (nth messages 4))))
 
 
 (defn- generate-password
-  ""
+  "Generates a password with a given `length`."
   [length]
-  (UUID/randomUUID))
+  (let [chars    (map char (range 33 127))
+        password (take length (repeatedly #(rand-nth chars)))]
+    (reduce str password)))
 
 
 (defn find-by-name
-  ""
+  "Attempts to find an entry in the database by a given `name`.
+  Will return `nil` if not found."
   [name]
   (->> @db*
        (filter #(= (:name %) name))
@@ -67,7 +75,7 @@
 
 
 (defn- create!
-  ""
+  "Creates a new item in the database with a given `name`."
   [name]
   (println (nth messages 2) name "...")
   (println (nth messages 3))
@@ -76,21 +84,24 @@
     (swap! db* conj {:name     name
                      :password password})
     (copy-password password)
-    (println (nth messages 4))))
+    (System/exit 0)))
 
 
 (defn- delete!
-  ""
+  "Deletes an item from the database by a given `name`."
   [name]
-  (init-db))
+  (init-db)
+  (println (nth messages 6) name "...")
+  (reset! db* (->> @db*
+                   (filterv #(not (= (:name %) name)))))
+  (println (nth messages 7))
+  (System/exit 0))
 
 
 (defn- change!
-  "Attempts to change the password of an existing item, but if
-  no item was found, offers to create one instead."
+  "Attempts to change the password of an existing item."
   [name]
   (init-db)
-  ; if the record exists, let's change it
   (when (find-by-name name)
     (println (nth messages 5) name "...")
     (println (nth messages 3))
@@ -103,14 +114,8 @@
                                 @db*)]
       (reset! db* updated-db)
       (println (nth messages 6))
-      (copy-password password)))
-  ; otherwise, let's offer to create instead.
-  (when-not (find-by-name name)
-    (println (nth messages 1))
-    (if (= (read-line) "yes")
-      (create! name)
+      (copy-password password)
       (System/exit 0))))
-
 
 
 (defn- list-items!
@@ -118,7 +123,8 @@
   []
   (init-db)
   (doseq [entry @db*]
-    (println (:name entry))))
+    (println (:name entry)))
+  (System/exit 0))
 
 
 (defn init
@@ -128,7 +134,8 @@
   (println (nth messages 0))
   (let [name (read-line)]
     (if-let [entry (find-by-name name)]
-      (copy-password (:password entry))
+      (do (copy-password (:password entry))
+          (System/exit 0))
       (do (println (nth messages 1))
           (if (= (read-line) "yes")
             (create! name)
