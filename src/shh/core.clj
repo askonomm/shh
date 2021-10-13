@@ -29,7 +29,8 @@
    "What is the desired password length?"
    "Password copied!"
    "Changing the password for:"
-   "Password updated."])
+   "Password updated."
+   "Password deleted."])
 
 
 (defn- init-db
