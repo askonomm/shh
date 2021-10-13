@@ -116,7 +116,7 @@ jobs:
       - name: Compress binary
         uses: svenstaro/upx-action@v2
         with:
-          file: shh-linux
+          file: shh
 
       - name: 'Publish native image'
         uses: actions/upload-artifact@v2-preview
