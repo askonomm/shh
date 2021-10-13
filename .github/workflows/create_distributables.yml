@@ -113,10 +113,10 @@ jobs:
             --no-fallback \
             -jar shh.jar
             
-      - name: Compress binary
-        uses: svenstaro/upx-action@v2
-        with:
-          file: shh
+      #- name: Compress binary
+      #  uses: svenstaro/upx-action@v2
+      #  with:
+      #    file: shh
 
       - name: 'Publish native image'
         uses: actions/upload-artifact@v2-preview
@@ -183,10 +183,10 @@ jobs:
             --no-fallback \
             -jar shh.jar
             
-      - name: Compress binary
-        uses: svenstaro/upx-action@v2
-        with:
-          file: shh
+      # - name: Compress binary
+      #  uses: svenstaro/upx-action@v2
+      #  with:
+      #    file: shh
 
       - name: 'Publish native image'
         uses: actions/upload-artifact@v2-preview
