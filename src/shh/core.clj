@@ -1,6 +1,7 @@
 (ns shh.core
   (:require [clojure.java.shell :as sh]
             [clojure.java.io :as io])
+  (:import [clojure.lang PersistentList])
   (:gen-class))
 
 
@@ -147,7 +148,7 @@
   "Parses a given list of `args` for a `command` and returns
   `true` if the command was found. If the command has a
   subcommand provided, then it will return that instead."
-  [command args]
+  [command ^PersistentList args]
   (when (seq? args)
     (let [index (.indexOf args command)]
       (if-not (= -1 index)
