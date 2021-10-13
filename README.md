@@ -25,7 +25,8 @@ You can then run shh as `shh` from anywhere.
 ### Finding and creating passwords
 
 To start, simply run `shh`. It will then prompt you for a name of a password, and if one isn't found, offers to create
-one with that name.
+one with that name. Whenever you create a new password, Shh will ask for a desired length of a password as well, which
+is convenient for services that have strict rules on the length of password they accept.
 
 To list the names of all existing passwords, run `shh list`.
 
