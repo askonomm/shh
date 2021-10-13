@@ -29,6 +29,10 @@ one with that name.
 
 To list the names of all existing passwords, run `shh list`.
 
+**Note:** All passwords are be stored in a `.shh.edn` file in the user' home directory, unencrypted. This means that
+your passwords will only be as safe as your computer. I might add some form of encryption later on (or you can make a
+PR!), but for now it's not a priority for me.
+
 ### Changing passwords
 
 To change an existing password, run `shh change {name}`.
