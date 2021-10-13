@@ -8,7 +8,7 @@
 (def db* (atom []))
 
 
-(def data-store-path
+(defn data-store-path []
   (str (System/getProperty "user.home") "/.shh.edn"))
 
 
@@ -16,7 +16,7 @@
   "Runs as a callback to the db* watcher whenever a change occurs,
   after which it will update the `data-store-path` with new data."
   [_ _ _ new-state]
-  (spit data-store-path new-state))
+  (spit (data-store-path) new-state))
 
 
 ; run `update-db` whenever db* changes.
@@ -39,10 +39,10 @@
   does, will populate the `db*` with it. Otherwise will leave `db*`
   as-is and create the database file."
   []
-  (if (.exists (io/file data-store-path))
-    (reset! db* (-> (slurp data-store-path)
+  (if (.exists (io/file (data-store-path)))
+    (reset! db* (-> (slurp (data-store-path))
                     (read-string)))
-    (spit data-store-path "[]")))
+    (spit (data-store-path) "[]")))
 
 
 (defn- copy-password
