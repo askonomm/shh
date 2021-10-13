@@ -1,0 +1,196 @@
+name: Create distributables
+on: [ workflow_dispatch ]
+jobs:
+  build-jar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Prepare Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: '11'
+
+      - name: Install Clojure Tools
+        uses: DeLaGuardo/setup-clojure@3.5
+        with:
+          cli: 1.10.1.693
+          lein: 2.9.1
+
+      - name: Build a uberjar
+        run: lein uberjar
+
+      - name: 'Publish JAR'
+        uses: actions/upload-artifact@v2-preview
+        with:
+          name: 'shh.jar'
+          path: target/shh.jar
+
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y.%m.%d')"
+
+      - name: 'Create Release'
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        with:
+          tag_name: ${{steps.date.outputs.date}}
+          release_name: ${{steps.date.outputs.date}}
+          body: |
+            This release is created automatically.
+          draft: false
+          prerelease: false
+
+      - name: 'Upload Release Asset'
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        with:
+          upload_url: ${{steps.create_release.outputs.upload_url}}
+          asset_path: target/shh.jar
+          asset_name: shh.jar
+          asset_content_type: application/java-archive
+
+      - name: 'Write Upload URL To File'
+        run: |
+          echo "${{steps.create_release.outputs.upload_url}}" > upload_url.txt
+      - name: 'Publish Upload URL'
+        uses: actions/upload-artifact@v2-preview
+        with:
+          name: 'upload_url.txt'
+          path: 'upload_url.txt'
+
+  build-native-image-linux:
+    needs: [ build-jar ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Prepare Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: '11'
+
+      - name: Install Clojure Tools
+        uses: DeLaGuardo/setup-clojure@3.5
+        with:
+          cli: 1.10.1.693
+          lein: 2.9.1
+
+      - name: 'Setup GraalVM Environment'
+        uses: DeLaGuardo/setup-graalvm@4.0
+        with:
+          graalvm-version: '21.0.0.2.java11'
+
+      - name: 'Install Native Image Plugin'
+        run: |
+          gu install native-image
+
+      - name: 'Get JAR artifact'
+        uses: actions/download-artifact@v2-preview
+        with:
+          name: 'shh.jar'
+
+      - name: 'Download Release URL'
+        uses: actions/download-artifact@v2-preview
+        with:
+          name: 'upload_url.txt'
+
+      - name: 'Set Upload URL Env Var'
+        run: |
+          echo "UPLOAD_URL=$(cat upload_url.txt)" >> $GITHUB_ENV
+
+      - name: Build a native image
+        run: |
+          native-image --report-unsupported-elements-at-runtime \
+            --no-fallback \
+            -jar shh.jar
+
+      - name: 'Publish native image'
+        uses: actions/upload-artifact@v2-preview
+        with:
+          name: 'shh-linux'
+          path: shh
+
+      - name: 'Upload native image'
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        with:
+          upload_url: ${{ env.UPLOAD_URL }}
+          asset_path: shh
+          asset_name: shh-linux
+          asset_content_type: application/octet-stream
+
+  build-native-image-macos:
+    needs: [ build-jar ]
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Prepare Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: '11'
+
+      - name: Install Clojure Tools
+        uses: DeLaGuardo/setup-clojure@3.5
+        with:
+          cli: 1.10.1.693
+          lein: 2.9.1
+
+      - name: 'Setup GraalVM Environment'
+        uses: DeLaGuardo/setup-graalvm@4.0
+        with:
+          graalvm-version: '21.0.0.2.java11'
+
+      - name: 'Install Native Image Plugin'
+        run: |
+          gu install native-image
+
+      - name: 'Get JAR artifact'
+        uses: actions/download-artifact@v2-preview
+        with:
+          name: 'shh.jar'
+
+      - name: 'Download Release URL'
+        uses: actions/download-artifact@v2-preview
+        with:
+          name: 'upload_url.txt'
+
+      - name: 'Set Upload URL Env Var'
+        run: |
+          echo "UPLOAD_URL=$(cat upload_url.txt)" >> $GITHUB_ENV
+
+      - name: Build a native image
+        run: |
+          native-image --report-unsupported-elements-at-runtime \
+            --no-fallback \
+            -jar shh.jar
+
+      - name: 'Publish native image'
+        uses: actions/upload-artifact@v2-preview
+        with:
+          name: 'shh-macos'
+          path: shh
+
+      - name: 'Upload native image'
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        with:
+          upload_url: ${{ env.UPLOAD_URL }}
+          asset_path: shh
+          asset_name: shh-macos
+          asset_content_type: application/octet-stream
