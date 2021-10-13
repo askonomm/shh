@@ -1,7 +1,6 @@
 (ns shh.core
   (:require [clojure.java.shell :as sh]
             [clojure.java.io :as io])
-  (:import (java.util UUID))
   (:gen-class))
 
 
@@ -127,8 +126,9 @@
   (System/exit 0))
 
 
-(defn init
-  ""
+(defn find-or-create!
+  "Attempts to find a password from user given input, and
+  offers to create one instead upon failure."
   []
   (init-db)
   (println (nth messages 0))
@@ -174,4 +174,4 @@
       ; real work that is either creating or getting
       ; passwords.
       :else
-      (init))))
+      (find-or-create!))))
