@@ -55,7 +55,7 @@
       (sh/sh "xclip -sel clip" "<<<" :in password)
       (= "Mac OS X" os)
       (sh/sh "pbcopy" "<<<" :in password))
-    (println (nth messages 4))))
+    (println (messages 4))))
 
 
 (defn- generate-password
@@ -78,8 +78,8 @@
 (defn- create!
   "Creates a new item in the database with a given `name`."
   [name]
-  (println (nth messages 2) name "...")
-  (println (nth messages 3))
+  (println (messages 2) name "...")
+  (println (messages 3))
   (let [password-length (Integer/parseInt (read-line))
         password        (generate-password password-length)]
     (swap! db* conj {:name     name
@@ -92,10 +92,10 @@
   "Deletes an item from the database by a given `name`."
   [name]
   (init-db)
-  (println (nth messages 6) name "...")
+  (println (messages 6) name "...")
   (reset! db* (->> @db*
                    (filterv #(not (= (:name %) name)))))
-  (println (nth messages 7))
+  (println (messages 7))
   (System/exit 0))
 
 
@@ -104,8 +104,8 @@
   [name]
   (init-db)
   (when (find-by-name name)
-    (println (nth messages 5) name "...")
-    (println (nth messages 3))
+    (println (messages 5) name "...")
+    (println (messages 3))
     (let [password-length (Integer/parseInt (read-line))
           password        (generate-password password-length)
           updated-db      (mapv (fn [item]
@@ -114,7 +114,7 @@
                                     item))
                                 @db*)]
       (reset! db* updated-db)
-      (println (nth messages 6))
+      (println (messages 6))
       (copy-password password)
       (System/exit 0))))
 
@@ -133,12 +133,12 @@
   offers to create one instead upon failure."
   []
   (init-db)
-  (println (nth messages 0))
+  (println (messages 0))
   (let [name (read-line)]
     (if-let [entry (find-by-name name)]
       (do (copy-password (:password entry))
           (System/exit 0))
-      (do (println (nth messages 1))
+      (do (println (messages 1))
           (if (= (read-line) "yes")
             (create! name)
             (System/exit 0))))))
