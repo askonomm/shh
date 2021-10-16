@@ -51,10 +51,15 @@
   (let [os (System/getProperty "os.name")]
     (cond
       (= "Linux" os)
-      (sh/sh "xclip -sel clip" "<<<" :in password)
+      (do
+        (sh/sh "xclip -sel clip" "<<<" :in password)
+        (println (:copy messages)))
       (= "Mac OS X" os)
-      (sh/sh "pbcopy" "<<<" :in password))
-    (println (:copy messages))))
+      (do
+        (sh/sh "pbcopy" "<<<" :in password)
+        (println (:copy messages)))
+      :else
+      (println "Password not copied.\nCurrently" os "is not supported"))))
 
 
 (defn- generate-password
