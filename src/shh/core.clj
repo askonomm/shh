@@ -28,11 +28,11 @@
   {:name-of-pass       "Shh! What is the name of the password you are looking for?"
    :pass-not-found     "No such password found. Would you like to create one? (yes/no)"
    :create             "Creating a password called:"
-   :desired-length     "What is the desired password length?"
+   :desired-length     "What is the desired password length? (number of characters)"
    :desired-complexity "What is the desired password complexity?\n
-                         1: hard (letters, numbers, special characters)
-                         2: medium (letters, numbers)
-                         3: easy (letters)"
+   1: hard (letters, numbers, special characters)
+   2: medium (letters, numbers)
+   3: easy (letters)"
    :copy               "Password copied!"
    :change             "Changing the password for:"
    :update             "Password updated."
@@ -45,7 +45,7 @@
   ([message-key]
    (say! message-key nil))
   ([message-key & args]
-   (println "\n" (message-key messages) (apply str args) "\n")))
+   (println "\n#" (message-key messages) (apply str args) "\n")))
 
 
 (defn- init-db
@@ -68,11 +68,11 @@
       (= "Linux" os)
       (do
         (sh/sh "xclip -sel clip" "<<<" :in password)
-        (println (:copy messages)))
+        (say! :copy))
       (= "Mac OS X" os)
       (do
         (sh/sh "pbcopy" "<<<" :in password)
-        (println (:copy messages)))
+        (say! :copy))
       :else
       (println "Password not copied.\nCurrently" os "is not supported"))))
 
@@ -121,8 +121,6 @@
 (defn- create!
   "Creates a new item in the database with a given `name`."
   [name]
-  (println (:create messages) name "...")
-  (println (:desired-length messages))
   (let [{:keys [length complexity]} (ask-password-info)
         password (generate-password length complexity)]
     (swap! db* conj {:name     name
@@ -135,10 +133,9 @@
   "Deletes an item from the database by a given `name`."
   [name]
   (init-db)
-  (println (:update messages) name "...")
   (reset! db* (->> @db*
                    (filterv #(not (= (:name %) name)))))
-  (println (:delete messages))
+  (say! :delete)
   (System/exit 0))
 
 
@@ -147,8 +144,6 @@
   [name]
   (init-db)
   (when (find-by-name name)
-    (println (:change messages) name "...")
-    (println (:desired-length messages))
     (let [{:keys [length complexity]} (ask-password-info)
           password   (generate-password length complexity)
           updated-db (mapv (fn [item]
@@ -157,7 +152,7 @@
                                item))
                            @db*)]
       (reset! db* updated-db)
-      (println (:update messages))
+      (say! :update)
       (copy-password password)
       (System/exit 0))))
 
@@ -176,12 +171,12 @@
   offers to create one instead upon failure."
   []
   (init-db)
-  (println (:name-of-pass messages))
+  (say! :name-of-pass)
   (let [name (read-line)]
     (if-let [entry (find-by-name name)]
       (do (copy-password (:password entry))
           (System/exit 0))
-      (do (println (:pass-not-found messages))
+      (do (say! :pass-not-found)
           (if (= (read-line) "yes")
             (create! name)
             (System/exit 0))))))
