@@ -32,6 +32,13 @@
    :change         "Changing the password for:"
    :update         "Password updated."
    :delete         "Password deleted."})
+(defn- say!
+  "Prints a message with given `message-key`, and any additional items
+  with the optional `args`."
+  ([message-key]
+   (say! message-key nil))
+  ([message-key & args]
+   (println "\n" (message-key messages) (apply str args) "\n")))
 
 (defn- init-db
   "Checks of the database exists at `data-store-path` and if it
