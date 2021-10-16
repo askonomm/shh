@@ -23,16 +23,15 @@
 (add-watch db* :watcher update-db)
 
 
-(def messages
-  ["Shh! What is the name of the password you are looking for?"
-   "No such password found. Would you like to create one? (yes/no)"
-   "Creating a password called:"
-   "What is the desired password length?"
-   "Password copied!"
-   "Changing the password for:"
-   "Password updated."
-   "Password deleted."])
-
+(def ^:private messages
+  {:name-of-pass   "Shh! What is the name of the password you are looking for?"
+   :pass-not-found "No such password found. Would you like to create one? (yes/no)"
+   :create         "Creating a password called:"
+   :desired-length "What is the desired password length?"
+   :copy           "Password copied!"
+   :change         "Changing the password for:"
+   :update         "Password updated."
+   :delete         "Password deleted."})
 
 (defn- init-db
   "Checks of the database exists at `data-store-path` and if it
@@ -55,7 +54,7 @@
       (sh/sh "xclip -sel clip" "<<<" :in password)
       (= "Mac OS X" os)
       (sh/sh "pbcopy" "<<<" :in password))
-    (println (messages 4))))
+    (println (:copy messages))))
 
 
 (defn- generate-password
@@ -78,8 +77,8 @@
 (defn- create!
   "Creates a new item in the database with a given `name`."
   [name]
-  (println (messages 2) name "...")
-  (println (messages 3))
+  (println (:create messages ) name "...")
+  (println (:desired-length messages))
   (let [password-length (Integer/parseInt (read-line))
         password        (generate-password password-length)]
     (swap! db* conj {:name     name
@@ -92,10 +91,10 @@
   "Deletes an item from the database by a given `name`."
   [name]
   (init-db)
-  (println (messages 6) name "...")
+  (println (:update messages) name "...")
   (reset! db* (->> @db*
                    (filterv #(not (= (:name %) name)))))
-  (println (messages 7))
+  (println (:delete messages))
   (System/exit 0))
 
 
@@ -104,8 +103,8 @@
   [name]
   (init-db)
   (when (find-by-name name)
-    (println (messages 5) name "...")
-    (println (messages 3))
+    (println (:change messages) name "...")
+    (println (:desired-length messages))
     (let [password-length (Integer/parseInt (read-line))
           password        (generate-password password-length)
           updated-db      (mapv (fn [item]
@@ -114,7 +113,7 @@
                                     item))
                                 @db*)]
       (reset! db* updated-db)
-      (println (messages 6))
+      (println (:update messages))
       (copy-password password)
       (System/exit 0))))
 
@@ -133,12 +132,12 @@
   offers to create one instead upon failure."
   []
   (init-db)
-  (println (messages 0))
+  (println (:name-of-pass messages))
   (let [name (read-line)]
     (if-let [entry (find-by-name name)]
       (do (copy-password (:password entry))
           (System/exit 0))
-      (do (println (messages 1))
+      (do (println (:pass-not-found messages))
           (if (= (read-line) "yes")
             (create! name)
             (System/exit 0))))))
