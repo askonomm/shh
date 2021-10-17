@@ -178,7 +178,7 @@ jobs:
           JAVA_HOME: ./graalvm-ce-java11-21.0.0.2
         run: |
           call "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
-          ./graalvm-ce-java11-21.0.0.2/bin/native-image --no-server --no-fallback -H:Name=blogger -jar shh.jar
+          ./graalvm-ce-java11-21.0.0.2/bin/native-image --no-server --no-fallback --report-unsupported-elements-at-runtime -H:Name=blogger -jar shh.jar
 
       - name: Compress binary
         uses: svenstaro/upx-action@v2
