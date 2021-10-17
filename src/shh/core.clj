@@ -1,7 +1,6 @@
 (ns shh.core
   (:require [clojure.java.shell :as sh]
-            [clojure.java.io :as io]
-            [clojure.string :as string])
+            [clojure.java.io :as io])
   (:import [clojure.lang PersistentList])
   (:gen-class))
 
@@ -24,6 +23,12 @@
 (add-watch db* :watcher update-db)
 
 
+(def complexity->characters
+  {1 (map char (range 33 127))                                      ; letters, numbers, special characters
+   2 (map char (concat (range 48 58) (range 65 91) (range 97 123))) ; letters, numbers
+   3 (map char (concat (range 65 91) (range 97 123)))})             ; letters
+
+
 (def ^:private messages
   {:name-of-pass       "Shh! What is the name of the password you are looking for?"
    :pass-not-found     "No such password found. Would you like to create one? (yes/no)"
@@ -33,7 +38,7 @@
    1: hard (letters, numbers, special characters)
    2: medium (letters, numbers)
    3: easy (letters)"
-   :copy               "Password copied!"
+   :copy               "Password copied to clipboard!"
    :change             "Changing the password for:"
    :update             "Password updated."
    :delete             "Password deleted."})
@@ -87,26 +92,21 @@
    :complexity (do (say! :desired-complexity)
                    (Integer/parseInt (read-line)))})
 
+(defn- generate-from-provided-chars
+  "Produces a string of 1000 random characters
+  from the provided set of `chars`"
+  [chars]
+  (->> #(rand-nth chars)
+       (repeatedly)
+       (take 1000)
+       (reduce str)))
 
 (defn- generate-password
   "Generates a password with a given `length` and `complexity`."
-  [length complexity]
-  (let [chars           (map char (range 33 127))
-        password-pieces (take 1000 (repeatedly #(rand-nth chars)))
-        password        (reduce str password-pieces)]
-    (cond
-      ; hard (letters, numbers, special characters)
-      (= 1 complexity)
-      (-> password
-          (subs 0 length))
-      ; medium (letters, numbers)
-      (= 2 complexity)
-      (-> (string/replace password #"[^\\\w0-9_]" "")
-          (subs 0 length))
-      ; easy (letters)
-      (= 3 complexity)
-      (-> (string/replace password #"[\\\W\\\d_]" "")
-          (subs 0 length)))))
+  [{:keys [length complexity]}]
+  (-> (get complexity->characters complexity)
+      (generate-from-provided-chars)
+      (subs 0 length)))
 
 
 (defn find-by-name
@@ -121,8 +121,8 @@
 (defn- create!
   "Creates a new item in the database with a given `name`."
   [name]
-  (let [{:keys [length complexity]} (ask-password-info)
-        password (generate-password length complexity)]
+  (let [password (-> (ask-password-info)
+                     (generate-password))]
     (swap! db* conj {:name     name
                      :password password})
     (copy-password password)
@@ -144,8 +144,8 @@
   [name]
   (init-db)
   (when (find-by-name name)
-    (let [{:keys [length complexity]} (ask-password-info)
-          password   (generate-password length complexity)
+    (let [password (-> (ask-password-info)
+                       (generate-password))
           updated-db (mapv (fn [item]
                              (if (= (:name item) name)
                                (merge item {:password password})
