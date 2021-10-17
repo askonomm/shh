@@ -1,6 +1,7 @@
 (ns shh.core
   (:require [clojure.java.shell :as sh]
-            [clojure.java.io :as io])
+            [clojure.java.io :as io]
+            [jansi-clj.core :as j])
   (:import [clojure.lang PersistentList]
            [java.io File])
   (:gen-class))
@@ -55,7 +56,8 @@
   ([message-key]
    (say! message-key nil))
   ([message-key & args]
-   (println "\n#" (message-key messages) (apply str args) "\n")))
+   (let [message (j/bold (message-key messages) (apply str args))]
+     (println "\n#" message "\n"))))
 
 
 (defn- init-db
