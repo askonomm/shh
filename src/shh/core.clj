@@ -45,7 +45,8 @@
    :copy               "Password copied to clipboard!"
    :change             "Changing the password for:"
    :update             "Password updated."
-   :delete             "Password deleted."})
+   :delete             "Password deleted."
+   :not-a-number       "Oops, given input is not a number. Please try again."})
 
 
 (defn- say!
@@ -91,10 +92,14 @@
    and complexity, which is needed to be able to generate
    a password."
   []
-  {:length     (do (say! :desired-length)
-                   (Integer/parseInt (read-line)))
-   :complexity (do (say! :desired-complexity)
-                   (Integer/parseInt (read-line)))})
+  (try
+    {:length     (do (say! :desired-length)
+                     (Integer/parseInt (read-line)))
+     :complexity (do (say! :desired-complexity)
+                     (Integer/parseInt (read-line)))}
+    (catch NumberFormatException _
+      (do (say! :not-a-number)
+          (System/exit 1)))))
 
 
 (defn- generate-from-provided-chars
