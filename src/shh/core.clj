@@ -28,6 +28,7 @@
    2 (map char (concat (range 48 58) (range 65 91) (range 97 123))) ; letters, numbers
    3 (map char (concat (range 65 91) (range 97 123)))})             ; letters
 
+
 (def ^:private messages
   {:name-of-pass       "Shh! What is the name of the password you are looking for?"
    :pass-not-found     "No such password found. Would you like to create one? (yes/no)"
