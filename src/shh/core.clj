@@ -1,7 +1,8 @@
 (ns shh.core
   (:require [clojure.java.shell :as sh]
             [clojure.java.io :as io])
-  (:import [clojure.lang PersistentList])
+  (:import [clojure.lang PersistentList]
+           [java.io File])
   (:gen-class))
 
 
@@ -9,7 +10,7 @@
 
 
 (defn data-store-path []
-  (str (System/getProperty "user.home") "/.shh.edn"))
+  (str (System/getProperty "user.home") File/separatorChar ".shh.edn"))
 
 
 (defn update-db
@@ -24,9 +25,12 @@
 
 
 (def complexity->characters
-  {1 (map char (range 33 127))                                      ; letters, numbers, special characters
-   2 (map char (concat (range 48 58) (range 65 91) (range 97 123))) ; letters, numbers
-   3 (map char (concat (range 65 91) (range 97 123)))})             ; letters
+  "1 maps letters, numbers and special characters.
+  2 maps letters and numbers
+  3 maps letters."
+  {1 (map char (range 33 127))
+   2 (map char (concat (range 48 58) (range 65 91) (range 97 123)))
+   3 (map char (concat (range 65 91) (range 97 123)))})
 
 
 (def ^:private messages
@@ -55,7 +59,7 @@
 
 (defn- init-db
   "Checks of the database exists at `data-store-path` and if it
-  does, will populate the `db*` with it. Otherwise will leave `db*`
+  does, will populate the `db*` with it. Otherwise, will leave `db*`
   as-is and create the database file."
   []
   (if (.exists (io/file (data-store-path)))
@@ -144,8 +148,8 @@
   [name]
   (init-db)
   (when (find-by-name name)
-    (let [password (-> (ask-password-info)
-                       (generate-password))
+    (let [password   (-> (ask-password-info)
+                         (generate-password))
           updated-db (mapv (fn [item]
                              (if (= (:name item) name)
                                (merge item {:password password})
