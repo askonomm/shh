@@ -1,0 +1,196 @@
+name: Create distributables test
+on: [ workflow_dispatch ]
+jobs:
+  build-jar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Prepare Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: '11'
+
+      - name: Install Clojure Tools
+        uses: DeLaGuardo/setup-clojure@3.5
+        with:
+          cli: 1.10.1.693
+          lein: 2.9.1
+
+      - name: Build a uberjar
+        run: lein uberjar
+
+      - name: 'Publish JAR'
+        uses: actions/upload-artifact@v2-preview
+        with:
+          name: 'shh.jar'
+          path: target/shh.jar
+
+      - name: 'Write Upload URL To File'
+        run: |
+          echo "${{steps.create_release.outputs.upload_url}}" > upload_url.txt
+      - name: 'Publish Upload URL'
+        uses: actions/upload-artifact@v2-preview
+        with:
+          name: 'upload_url.txt'
+          path: 'upload_url.txt'
+
+  build-native-image-linux:
+    needs: [ build-jar ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Prepare Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: '11'
+
+      - name: Install Clojure Tools
+        uses: DeLaGuardo/setup-clojure@3.5
+        with:
+          cli: 1.10.1.693
+          lein: 2.9.1
+
+      - name: 'Setup GraalVM Environment'
+        uses: DeLaGuardo/setup-graalvm@4.0
+        with:
+          graalvm-version: '21.0.0.2.java11'
+
+      - name: 'Install Native Image Plugin'
+        run: |
+          gu install native-image
+
+      - name: 'Get JAR artifact'
+        uses: actions/download-artifact@v2-preview
+        with:
+          name: 'shh.jar'
+
+      - name: 'Download Release URL'
+        uses: actions/download-artifact@v2-preview
+        with:
+          name: 'upload_url.txt'
+
+      - name: 'Set Upload URL Env Var'
+        run: |
+          echo "UPLOAD_URL=$(cat upload_url.txt)" >> $GITHUB_ENV
+
+      - name: Build a native image
+        run: |
+          native-image --report-unsupported-elements-at-runtime \
+            --no-fallback \
+            -jar shh.jar
+
+      - name: Compress binary
+        uses: svenstaro/upx-action@v2
+        with:
+          file: shh
+
+  build-native-image-macos:
+    needs: [ build-jar ]
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Prepare Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: '11'
+
+      - name: Install Clojure Tools
+        uses: DeLaGuardo/setup-clojure@3.5
+        with:
+          cli: 1.10.1.693
+          lein: 2.9.1
+
+      - name: 'Setup GraalVM Environment'
+        uses: DeLaGuardo/setup-graalvm@4.0
+        with:
+          graalvm-version: '21.0.0.2.java11'
+
+      - name: 'Install Native Image Plugin'
+        run: |
+          gu install native-image
+
+      - name: 'Get JAR artifact'
+        uses: actions/download-artifact@v2-preview
+        with:
+          name: 'shh.jar'
+
+      - name: 'Download Release URL'
+        uses: actions/download-artifact@v2-preview
+        with:
+          name: 'upload_url.txt'
+
+      - name: 'Set Upload URL Env Var'
+        run: |
+          echo "UPLOAD_URL=$(cat upload_url.txt)" >> $GITHUB_ENV
+
+      - name: Build a native image
+        run: |
+          native-image --report-unsupported-elements-at-runtime \
+            --no-fallback \
+            -jar shh.jar
+
+      - name: Compress binary
+        uses: svenstaro/upx-action@v2
+        with:
+          file: shh
+
+  build-native-image-windows:
+    needs: [ build-jar ]
+    runs-on: windows-2016
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v1
+
+      - name: 'Download GraalVM'
+        run: |
+          Invoke-RestMethod -Uri https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.0.0.2/graalvm-ce-java11-windows-amd64-21.0.0.2.zip -OutFile 'graal.zip'
+
+      - name: 'Install GraalVM'
+        run: |
+          Expand-Archive -path 'graal.zip' -destinationpath '.'
+
+      - name: 'Install Native Image'
+        run: |
+          graalvm-ce-java11-21.0.0.2\bin\gu.cmd install native-image
+
+      - name: 'Set up Visual C Build Tools Workload for Visual Studio 2017 Build Tools'
+        run: |
+          choco install visualstudio2017-workload-vctools
+        shell: bash
+
+      - name: 'Get JAR Artifact'
+        uses: actions/download-artifact@v2-preview
+        with:
+          name: 'shh.jar'
+
+      - name: 'Build Native Image'
+        shell: cmd
+        env:
+          JAVA_HOME: ./graalvm-ce-java11-21.0.0.2
+        run: |
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
+          ./graalvm-ce-java11-21.0.0.2/bin/native-image --no-server --no-fallback -H:Name=blogger -jar shh.jar
+
+      - name: Compress binary
+        uses: svenstaro/upx-action@v2
+        with:
+          file: shh.exe
+
+      - name: 'Get Release URL'
+        uses: actions/download-artifact@v2-preview
+        with:
+          name: 'upload_url.txt'
+
+      - name: 'Get Upload URL'
+        run: |
+          echo "UPLOAD_URL=$(cat upload_url.txt)" >> $GITHUB_ENV
+        shell: bash
