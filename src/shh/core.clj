@@ -96,6 +96,7 @@
    :complexity (do (say! :desired-complexity)
                    (Integer/parseInt (read-line)))})
 
+
 (defn- generate-from-provided-chars
   "Produces a string of 1000 random characters
   from the provided set of `chars`"
@@ -104,6 +105,7 @@
        (repeatedly)
        (take 1000)
        (reduce str)))
+
 
 (defn- generate-password
   "Generates a password with a given `length` and `complexity`."
