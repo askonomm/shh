@@ -47,7 +47,9 @@
    :change             "Changing the password for:"
    :update             "Password updated."
    :delete             "Password deleted."
-   :not-a-number       "Oops, given input is not a number. Please try again."})
+   :not-a-number       "Oops, given input is not a number. Please try again."
+   :cannot-copy        "Cannot copy password, displaying password instead ..."
+   :password-is        "Password is: "})
 
 
 (defn- say!
@@ -78,9 +80,13 @@
   (let [os (System/getProperty "os.name")]
     (cond
       (= "Linux" os)
-      (do
+      (try
         (sh/sh "xclip -sel clip" "<<<" :in password)
-        (say! :copy))
+        (say! :copy)
+        (catch Exception _
+          (say! :cannot-copy)
+          (say! :password-is password)
+          (System/exit 1)))
       (= "Mac OS X" os)
       (do
         (sh/sh "pbcopy" "<<<" :in password)
