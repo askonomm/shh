@@ -4,7 +4,9 @@ A CLI password manager designed for efficiency.
 
 ## Install
 
-### Locally
+### Linux & Mac OS
+
+#### Locally
 
 ```shell
 curl -s https://raw.githubusercontent.com/askonomm/shh/master/installer.sh | bash -s
@@ -12,13 +14,17 @@ curl -s https://raw.githubusercontent.com/askonomm/shh/master/installer.sh | bas
 
 You can then run Shh as `./shh`, given that the Shh executable is in the current working directory.
 
-### Globally
+#### Globally
 
 ```shell
 curl -s https://raw.githubusercontent.com/askonomm/shh/master/installer.sh | bash -s -- -g
 ```
 
 You can then run Shh as `shh` from anywhere.
+
+### Windows
+
+[Download shh.exe from the latest release](https://github.com/askonomm/shh/releases/latest), then move it to somewhere on PATH and run it as `shh` from anywhere.
 
 ## Usage
 
