@@ -204,3 +204,74 @@ jobs:
           asset_path: shh
           asset_name: shh-macos
           asset_content_type: application/octet-stream
+
+  build-native-image-windows:
+    needs: [ build-jar ]
+    runs-on: windows-2016
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v1
+
+      - name: 'Download GraalVM'
+        run: |
+          Invoke-RestMethod -Uri https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.0.0.2/graalvm-ce-java11-windows-amd64-21.0.0.2.zip -OutFile 'graal.zip'
+
+      - name: 'Install GraalVM'
+        run: |
+          Expand-Archive -path 'graal.zip' -destinationpath '.'
+
+      - name: 'Install Native Image'
+        run: |
+          graalvm-ce-java11-21.0.0.2\bin\gu.cmd install native-image
+
+      - name: 'Set up Visual C Build Tools Workload for Visual Studio 2017 Build Tools'
+        run: |
+          choco install visualstudio2017-workload-vctools
+        shell: bash
+
+      - name: 'Get JAR Artifact'
+        uses: actions/download-artifact@v2-preview
+        with:
+          name: 'shh.jar'
+
+      - name: 'Build Native Image'
+        shell: cmd
+        env:
+          JAVA_HOME: ./graalvm-ce-java11-21.0.0.2
+        run: |
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
+          ./graalvm-ce-java11-21.0.0.2/bin/native-image --no-server --no-fallback --report-unsupported-elements-at-runtime -H:Name=blogger -jar shh.jar
+
+      - name: Compress binary
+        uses: svenstaro/upx-action@v2
+        with:
+          file: shh.exe
+
+      - name: 'Get Release URL'
+        uses: actions/download-artifact@v2-preview
+        with:
+          name: 'upload_url.txt'
+
+      - name: 'Get Upload URL'
+        run: |
+          echo "UPLOAD_URL=$(cat upload_url.txt)" >> $GITHUB_ENV
+        shell: bash
+
+      - name: 'Publish Windows Image'
+        if: success()
+        uses: actions/upload-artifact@v2-preview
+        with:
+          name: 'shh.exe'
+          path: 'shh.exe'
+
+      - name: 'Release Windows Image Asset'
+        if: success()
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        with:
+          upload_url: ${{env.UPLOAD_URL}}
+          asset_name: 'shh.exe'
+          asset_path: 'shh.exe'
+          asset_content_type: application/octet-stream
