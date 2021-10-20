@@ -88,10 +88,17 @@
           (say! :cannot-copy)
           (say! :password-is password)
           (System/exit 1)))
+
       (= "Mac OS X" os)
       (do
         (sh/sh "pbcopy" "<<<" :in password)
         (say! :copy))
+
+      (string/includes? os "Windows") ; for win 10 and 11 (and even 7)
+      (do
+        (sh/sh "clip" :in password)
+        (say! :copy))
+
       :else
       (println "Password not copied.\nCurrently" os "is not supported"))))
 
