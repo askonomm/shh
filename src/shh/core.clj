@@ -1,7 +1,8 @@
 (ns shh.core
   (:require [clojure.java.shell :as sh]
             [clojure.java.io :as io]
-            [jansi-clj.core :as j])
+            [jansi-clj.core :as j]
+            [clojure.string :as string])
   (:import [clojure.lang PersistentList]
            [java.io File])
   (:gen-class))
