@@ -64,7 +64,7 @@
 
 
 (defn- init-db
-  "Checks of the database exists at `data-store-path` and if it
+  "Checks if the database exists at `data-store-path` and if it
   does, will populate the `db*` with it. Otherwise, will leave `db*`
   as-is and create the database file."
   []
