@@ -86,8 +86,7 @@
         (say! :copy)
         (catch Exception _
           (say! :cannot-copy)
-          (say! :password-is password)
-          (System/exit 1)))
+          (say! :password-is password)))
 
       (= "Mac OS X" os)
       (do
