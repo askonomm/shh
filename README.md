@@ -24,6 +24,12 @@ You can then run Shh as `shh` from anywhere.
 
 ### Windows
 
+#### Scoop
+
+If you have [Scoop installed and required buckets added](https://github.com/littleli/scoop-clojure/wiki/Getting-started-VERY-QUICKLY) then you can simply run `scoop install shh`, and Shh will be available as `shh` from anywhere.
+
+#### Download executable
+
 [Download shh.exe from the latest release](https://github.com/askonomm/shh/releases/latest), then move it to somewhere on PATH and run it as `shh` from anywhere.
 
 ## Usage
