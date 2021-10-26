@@ -84,7 +84,7 @@
                     dblist->dbmap))
     (spit (data-store-path) "{ \"default\" []}")))
 
-`
+
 (defn- copy-password
   "Depending on the operating system used, attempts to copy the
   given `password` into clipboard."
@@ -163,9 +163,11 @@
   "Creates a new item in the database with a given `name`."
   [name]
   (let [password (-> (ask-password-info)
-                     (generate-password))]
-    (swap! db* conj {:name     name
-                     :password password})
+                     (generate-password))
+        tag (ask-for-tag)]
+    (swap! db* (fn [db]
+                 (update db tag conj {:name     name
+                                   :password password})))
     (copy-password password)
     (System/exit 0)))
 
