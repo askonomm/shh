@@ -8,7 +8,7 @@
   (:gen-class))
 
 
-(def db* (atom []))
+(def db* (atom {}))
 
 
 (defn data-store-path []
