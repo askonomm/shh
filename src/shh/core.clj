@@ -63,6 +63,15 @@
      (println "\n#" message "\n"))))
 
 
+(defn- dblist->dbmap
+  "If the edn file is a list of passwords, then creates a map
+  with default as key and db as value."
+  [db]
+  (if (instance? clojure.lang.PersistentVector db)
+    {"default" db}
+    db))
+
+
 (defn- init-db
   "Checks if the database exists at `data-store-path` and if it
   does, will populate the `db*` with it. Otherwise, will leave `db*`
@@ -70,10 +79,11 @@
   []
   (if (.exists (io/file (data-store-path)))
     (reset! db* (-> (slurp (data-store-path))
-                    (read-string)))
-    (spit (data-store-path) "[]")))
+                    (read-string)
+                    dblist->dbmap))
+    (spit (data-store-path) "{ \"default\" []}")))
 
-
+`
 (defn- copy-password
   "Depending on the operating system used, attempts to copy the
   given `password` into clipboard."
