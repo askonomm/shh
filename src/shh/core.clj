@@ -44,6 +44,7 @@
    1: hard (letters, numbers, special characters)
    2: medium (letters, numbers)
    3: easy (letters)"
+   :tag                "Add a tag to the password, or leave blank for the default tag."
    :copy               "Password copied to clipboard!"
    :change             "Changing the password for:"
    :update             "Password updated."
