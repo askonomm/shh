@@ -148,7 +148,9 @@
 (defn- ask-for-tag []
   (let [tag (do (say! :tag)
                 (read-line))]
-    (if tag tag "default")))
+    (if (string/blank? tag)
+      tag
+      "default")))
 
 (defn find-by-name
   "Attempts to find an entry in the database by a given `name`.
