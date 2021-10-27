@@ -153,12 +153,10 @@
       "default")))
 
 (defn find-by-name
-  "Attempts to find an entry in the database by a given `name`.
-  Will return `nil` if not found."
-  [name]
-  (->> @db*
-       (filter #(= (:name %) name))
-       first))
+  "Attempts to find an entry in the database by a given `pass-name`.
+  Will return `nil` if not found.
+  `pass-name` is a namespaced password "
+  [pass-name]
 
 
 (defn- create!
