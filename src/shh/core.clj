@@ -152,12 +152,17 @@
       tag
       "default")))
 
+(defn- parse-pass-name [pass-name]
+  (if (string/includes? pass-name "/") ; to handle cases when user doesn't use tags.
+  (string/split pass-name #"/")
+    ["default" pass-name]))
+
 (defn find-by-name
   "Attempts to find a password in the database by a given `pass-name`.
   Will return `nil` if not found.
   `pass-name` is a namespaced password "
   [pass-name]
-  (let [[tag name] (string/split pass-name #"/")
+  (let [[tag name] (parse-pass-name pass-name)
         passwords  (get @db* tag nil)
         [found-pass] (filter #(= (:name %) name) passwords)]
     (when found-pass (:password found-pass))))
