@@ -153,8 +153,8 @@
       "default")))
 
 (defn- parse-pass-name [pass-name]
-  (if (string/includes? pass-name "/")) ; to handle cases when user doesn't use tags.
-  (string/split pass-name #"/"
+  (if (string/includes? pass-name "/") ; to handle cases when user doesn't use tags.
+    (string/split pass-name #"/")
     ["default" pass-name]))
 
 (defn find-by-name
@@ -198,8 +198,8 @@
   [pass-name]
   (init-db)
   (when (find-by-name pass-name)
-    (let [new-password   (-> (ask-password-info))
-                         (generate-password)
+    (let [new-password   (-> (ask-password-info)
+                         (generate-password))
           [tag name] (parse-pass-name pass-name)]
       (swap! db* update tag #(map (fn [item]
                                     (if (= (:name item) name)
