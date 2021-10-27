@@ -215,7 +215,10 @@
 
 (defn find-or-create!
   "Attempts to find a password from user given input, and
-  offers to create one instead upon failure."
+  offers to create one instead upon failure.
+
+  If you have tagged passwords you can use this syntax
+  to search for the password `tag-name/password-name`."
   []
   (init-db)
   (say! :name-of-pass)
