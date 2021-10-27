@@ -183,10 +183,12 @@
 
 (defn- delete!
   "Deletes an item from the database by a given `name`."
-  [name]
+  [pass-name]
   (init-db)
-  (reset! db* (->> @db*
-                   (filterv #(not (= (:name %) name)))))
+  (let [[tag name] (parse-pass-name pass-name)]
+    (swap! db* update tag #(filter (fn [item]
+                                     (not= (:name item) name))
+                                   %)))
   (say! :delete)
   (System/exit 0))
 
