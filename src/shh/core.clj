@@ -241,7 +241,9 @@
   (init-db)
   (say! :name-of-pass)
   (let [name (read-line)]
+    (if-let [password (find-by-name name)]
       (do (copy-password password)
+          (System/exit 0))
       (do (say! :pass-not-found)
           (if (= (read-line) "yes")
             (create! name)
