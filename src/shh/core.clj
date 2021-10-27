@@ -212,12 +212,23 @@
 
 
 (defn- list-items!
-  "Lists all the names of the items in db."
-  []
-  (init-db)
-  (doseq [entry @db*]
-    (println (:name entry)))
-  (System/exit 0))
+  "Lists all the names of the items in db.
+  Optionally pass in a tag to list passwords from that tag."
+  ([]
+   (init-db)
+   (->> @db*
+        (map (fn [[k v]]
+               (for [entry v]
+                 (str k "/" (:name entry)))))
+        flatten
+        (map println)
+        dorun)
+     (System/exit 0))
+  ([tag]
+   (init-db)
+   (doseq [entry (get @db* tag)]
+     (println (str tag "/" (:name entry))))
+      (System/exit 0)))
 
 
 (defn find-or-create!
