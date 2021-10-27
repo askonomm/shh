@@ -153,10 +153,14 @@
       "default")))
 
 (defn find-by-name
-  "Attempts to find an entry in the database by a given `pass-name`.
+  "Attempts to find a password in the database by a given `pass-name`.
   Will return `nil` if not found.
   `pass-name` is a namespaced password "
   [pass-name]
+  (let [[tag name] (string/split pass-name #"/")
+        passwords  (get @db* tag nil)
+        [found-pass] (filter #(= (:name %) name) passwords)]
+    (when found-pass (:password found-pass))))
 
 
 (defn- create!
@@ -216,9 +220,7 @@
   (init-db)
   (say! :name-of-pass)
   (let [name (read-line)]
-    (if-let [entry (find-by-name name)]
-      (do (copy-password (:password entry))
-          (System/exit 0))
+      (do (copy-password password)
       (do (say! :pass-not-found)
           (if (= (read-line) "yes")
             (create! name)
