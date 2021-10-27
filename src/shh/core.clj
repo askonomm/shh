@@ -153,8 +153,8 @@
       "default")))
 
 (defn- parse-pass-name [pass-name]
-  (if (string/includes? pass-name "/") ; to handle cases when user doesn't use tags.
-  (string/split pass-name #"/")
+  (if (string/includes? pass-name "/")) ; to handle cases when user doesn't use tags.
+  (string/split pass-name #"/"
     ["default" pass-name]))
 
 (defn find-by-name
@@ -175,8 +175,8 @@
                      (generate-password))
         tag (ask-for-tag)]
     (swap! db* (fn [db]
-                 (update db tag conj {:name     name
-                                   :password password})))
+                 (update db tag conj {:name     name}
+                                   :password password)))
     (copy-password password)
     (System/exit 0)))
 
@@ -198,8 +198,8 @@
   [pass-name]
   (init-db)
   (when (find-by-name pass-name)
-    (let [new-password   (-> (ask-password-info)
-                         (generate-password))
+    (let [new-password   (-> (ask-password-info))
+                         (generate-password)
           [tag name] (parse-pass-name pass-name)]
       (swap! db* update tag #(map (fn [item]
                                     (if (= (:name item) name)
@@ -227,8 +227,8 @@
   ([tag]
    (init-db)
    (doseq [entry (get @db* tag)]
-     (println (str tag "/" (:name entry))))
-      (System/exit 0)))
+     (println (str tag "/" (:name entry))
+      (System/exit 0)))))
 
 
 (defn find-or-create!
@@ -241,7 +241,9 @@
   (init-db)
   (say! :name-of-pass)
   (let [name (read-line)]
+    (if-let [password (find-by-name name)]
       (do (copy-password password)
+          (System/exit 0))
       (do (say! :pass-not-found)
           (if (= (read-line) "yes")
             (create! name)
