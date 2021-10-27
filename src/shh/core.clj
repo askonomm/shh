@@ -193,19 +193,19 @@
 
 (defn- change!
   "Attempts to change the password of an existing item."
-  [name]
+  [pass-name]
   (init-db)
-  (when (find-by-name name)
-    (let [password   (-> (ask-password-info)
+  (when (find-by-name pass-name)
+    (let [new-password   (-> (ask-password-info)
                          (generate-password))
-          updated-db (mapv (fn [item]
-                             (if (= (:name item) name)
-                               (merge item {:password password})
-                               item))
-                           @db*)]
-      (reset! db* updated-db)
+          [tag name] (parse-pass-name pass-name)]
+      (swap! db* update tag #(map (fn [item]
+                                    (if (= (:name item) name)
+                                      (merge item {:password new-password})
+                                      item))
+                                  %))
       (say! :update)
-      (copy-password password)
+      (copy-password new-password)
       (System/exit 0))))
 
 
