@@ -217,9 +217,9 @@
   ([]
    (init-db)
    (->> @db*
-        (map (fn [[k v]]
-               (for [entry v]
-                 (str k "/" (:name entry)))))
+        (map (fn [[tag entries]]
+               (for [{:keys [name]} entries]
+                 (str tag "/" name))))
         flatten
         (map println)
         dorun)
