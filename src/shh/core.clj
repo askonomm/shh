@@ -145,6 +145,7 @@
       (generate-from-provided-chars)
       (subs 0 length)))
 
+
 (defn- ask-for-tag []
   (let [tag (do (say! :tag)
                 (read-line))]
@@ -152,10 +153,12 @@
       tag
       "default")))
 
+
 (defn- parse-pass-name [pass-name]
   (if (string/includes? pass-name "/") ; to handle cases when user doesn't use tags.
     (string/split pass-name #"/")
     ["default" pass-name]))
+
 
 (defn find-by-name
   "Attempts to find a password in the database by a given `pass-name`.
