@@ -8,7 +8,7 @@
   (:gen-class))
 
 
-(def db* (atom []))
+(def db* (atom {}))
 
 
 (defn data-store-path []
@@ -44,6 +44,7 @@
    1: hard (letters, numbers, special characters)
    2: medium (letters, numbers)
    3: easy (letters)"
+   :tag                "Add a tag to the password, or leave blank for the default tag."
    :copy               "Password copied to clipboard!"
    :change             "Changing the password for:"
    :update             "Password updated."
@@ -63,6 +64,15 @@
      (println "\n#" message "\n"))))
 
 
+(defn- dblist->dbmap
+  "If the edn file is a list of passwords, then creates a map
+  with default as key and db as value."
+  [db]
+  (if (instance? clojure.lang.PersistentVector db)
+    {"default" db}
+    db))
+
+
 (defn- init-db
   "Checks if the database exists at `data-store-path` and if it
   does, will populate the `db*` with it. Otherwise, will leave `db*`
@@ -70,8 +80,9 @@
   []
   (if (.exists (io/file (data-store-path)))
     (reset! db* (-> (slurp (data-store-path))
-                    (read-string)))
-    (spit (data-store-path) "[]")))
+                    (read-string)
+                    dblist->dbmap))
+    (spit (data-store-path) "{ \"default\" []}")))
 
 
 (defn- copy-password
@@ -134,73 +145,104 @@
       (generate-from-provided-chars)
       (subs 0 length)))
 
+(defn- ask-for-tag []
+  (let [tag (do (say! :tag)
+                (read-line))]
+    (if (string/blank? tag)
+      tag
+      "default")))
+
+(defn- parse-pass-name [pass-name]
+  (if (string/includes? pass-name "/") ; to handle cases when user doesn't use tags.
+    (string/split pass-name #"/")
+    ["default" pass-name]))
 
 (defn find-by-name
-  "Attempts to find an entry in the database by a given `name`.
-  Will return `nil` if not found."
-  [name]
-  (->> @db*
-       (filter #(= (:name %) name))
-       first))
+  "Attempts to find a password in the database by a given `pass-name`.
+  Will return `nil` if not found.
+  `pass-name` is a namespaced password "
+  [pass-name]
+  (let [[tag name] (parse-pass-name pass-name)
+        passwords  (get @db* tag nil)
+        [found-pass] (filter #(= (:name %) name) passwords)]
+    (when found-pass (:password found-pass))))
 
 
 (defn- create!
   "Creates a new item in the database with a given `name`."
   [name]
   (let [password (-> (ask-password-info)
-                     (generate-password))]
-    (swap! db* conj {:name     name
-                     :password password})
+                     (generate-password))
+        tag (ask-for-tag)]
+    (swap! db* (fn [db]
+                 (update db tag conj {:name     name}
+                                   :password password)))
     (copy-password password)
     (System/exit 0)))
 
 
 (defn- delete!
   "Deletes an item from the database by a given `name`."
-  [name]
+  [pass-name]
   (init-db)
-  (reset! db* (->> @db*
-                   (filterv #(not (= (:name %) name)))))
+  (let [[tag name] (parse-pass-name pass-name)]
+    (swap! db* update tag #(filter (fn [item]
+                                     (not= (:name item) name))
+                                   %)))
   (say! :delete)
   (System/exit 0))
 
 
 (defn- change!
   "Attempts to change the password of an existing item."
-  [name]
+  [pass-name]
   (init-db)
-  (when (find-by-name name)
-    (let [password   (-> (ask-password-info)
+  (when (find-by-name pass-name)
+    (let [new-password   (-> (ask-password-info)
                          (generate-password))
-          updated-db (mapv (fn [item]
-                             (if (= (:name item) name)
-                               (merge item {:password password})
-                               item))
-                           @db*)]
-      (reset! db* updated-db)
+          [tag name] (parse-pass-name pass-name)]
+      (swap! db* update tag #(map (fn [item]
+                                    (if (= (:name item) name)
+                                      (merge item {:password new-password})
+                                      item))
+                                  %))
       (say! :update)
-      (copy-password password)
+      (copy-password new-password)
       (System/exit 0))))
 
 
 (defn- list-items!
-  "Lists all the names of the items in db."
-  []
-  (init-db)
-  (doseq [entry @db*]
-    (println (:name entry)))
-  (System/exit 0))
+  "Lists all the names of the items in db.
+  Optionally pass in a tag to list passwords from that tag."
+  ([]
+   (init-db)
+   (->> @db*
+        (map (fn [[tag entries]]
+               (for [{:keys [name]} entries]
+                 (str tag "/" name))))
+        flatten
+        (map println)
+        dorun)
+     (System/exit 0))
+  ([tag]
+   (init-db)
+   (doseq [entry (get @db* tag)]
+     (println (str tag "/" (:name entry))
+      (System/exit 0)))))
 
 
 (defn find-or-create!
   "Attempts to find a password from user given input, and
-  offers to create one instead upon failure."
+  offers to create one instead upon failure.
+
+  If you have tagged passwords you can use this syntax
+  to search for the password `tag-name/password-name`."
   []
   (init-db)
   (say! :name-of-pass)
   (let [name (read-line)]
-    (if-let [entry (find-by-name name)]
-      (do (copy-password (:password entry))
+    (if-let [password (find-by-name name)]
+      (do (copy-password password)
           (System/exit 0))
       (do (say! :pass-not-found)
           (if (= (read-line) "yes")
