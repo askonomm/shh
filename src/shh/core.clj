@@ -149,9 +149,9 @@
 (defn- ask-for-tag []
   (let [tag (do (say! :tag)
                 (read-line))]
-    (if (string/blank? tag)
-      tag
-      "default")))
+    (if (string/blank? (string/trim tag))
+      "default"
+      tag)))
 
 
 (defn- parse-pass-name [pass-name]
@@ -178,8 +178,8 @@
                      (generate-password))
         tag (ask-for-tag)]
     (swap! db* (fn [db]
-                 (update db tag conj {:name     name}
-                                   :password password)))
+                 (update db tag conj {:name     name
+                                      :password password})))
     (copy-password password)
     (System/exit 0)))
 
